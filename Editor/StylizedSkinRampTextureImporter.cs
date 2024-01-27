@@ -13,7 +13,7 @@ namespace StylizedSkinRampTexture.Editor
         public const string Extension = "skinramp";
 
         public bool mip = true;
-        public TextureFormat format = TextureFormat.RGBA32;
+        public TextureFormat format = TextureFormat.RGB24;
         public FilterMode filterMode = FilterMode.Bilinear;
         public TextureWrapMode wrapMode = TextureWrapMode.Clamp;
         

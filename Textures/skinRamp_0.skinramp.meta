@@ -9,7 +9,7 @@ ScriptedImporter:
   assetBundleVariant: 
   script: {fileID: 11500000, guid: dde8f11a0ebc0f24dbfb85a7f9e5d933, type: 3}
   mip: 1
-  format: 4
+  format: 3
   filterMode: 1
   wrapMode: 1
   isDataDirty: 0
