@@ -1,8 +1,4 @@
-using System;
-using System.IO;
-using UnityEditor;
 using UnityEditor.AssetImporters;
-using UnityEditor.Callbacks;
 using UnityEngine;
 
 namespace StylizedSkinRampTexture.Editor
@@ -24,22 +20,13 @@ namespace StylizedSkinRampTexture.Editor
             var data = StylizedSkinRampTextureData.Load(assetPath);
             var texture = data.GenerateTexture(format, mip, SettingsAfterGenerateTexture);
             ctx.AddObjectToAsset("MainObject",texture);
+            data.Unload();
         }
 
         void SettingsAfterGenerateTexture(Texture2D texture)
         {
             texture.filterMode = filterMode;
             texture.wrapMode = wrapMode;
-        }
-        
-        
-        [OnOpenAsset(0)]
-        public static bool OnOpenAsset(int instanceID, int line)
-        {
-            var path = AssetDatabase.GetAssetPath(instanceID);
-            if (!(AssetImporter.GetAtPath(path) as StylizedSkinRampTextureImporter)) return false;
-            EditorUtility.OpenPropertyEditor(AssetDatabase.LoadAssetAtPath<Texture2D>(path));
-            return true;
         }
     }
 }

@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.AssetImporters;
+using UnityEditor.Callbacks;
 using UnityEngine;
 
 namespace StylizedSkinRampTexture.Editor
@@ -9,14 +10,14 @@ namespace StylizedSkinRampTexture.Editor
     {
         public override bool showImportedObject => false;
     
-        private StylizedSkinRampTextureEditorObject _editorObject;
+        private StylizedSkinRampTextureData _data;
         private SerializedObject _serializedDataObject;
         private SerializedProperty _surfaceColor;
         private SerializedProperty _subsurfaceColor;
         private SerializedProperty _textureSize;
         
         private StylizedSkinRampTextureImporter _importer;
-        private SerializedObject _serializedImporter;
+        private SerializedObject _serializedImporterObject;
         private SerializedProperty _format;
         private SerializedProperty _mip;
         private SerializedProperty _filterMode;
@@ -32,13 +33,13 @@ namespace StylizedSkinRampTexture.Editor
         public void ApplyData()
         {
             _isDataDirty.boolValue = false; 
-            _serializedImporter.ApplyModifiedProperties();
-            StylizedSkinRampTextureData.Save(_importer.assetPath, _editorObject);
+            _serializedImporterObject.ApplyModifiedProperties();
+            StylizedSkinRampTextureData.Save(_importer.assetPath, _data);
         }
     
         bool TryInitPropertiesWhenNull()
         {
-            if (_editorObject && _serializedDataObject != null && _importer && _serializedImporter != null)
+            if (_data && _serializedDataObject != null && _importer && _serializedImporterObject != null)
                 return true;
             
             if (target is not StylizedSkinRampTextureImporter importer)
@@ -49,38 +50,42 @@ namespace StylizedSkinRampTexture.Editor
                 _importer = importer;
             }
             
-            if (_importer && !_editorObject)
+            if (_importer && !_data)
             {
-                _editorObject = ScriptableObject.CreateInstance<StylizedSkinRampTextureEditorObject>();
-                _editorObject.Init(StylizedSkinRampTextureData.Load(_importer.assetPath));
+                _data = StylizedSkinRampTextureData.Load(_importer.assetPath);
             }
             
-            if (_editorObject && _serializedDataObject == null)
+            if (_data && _serializedDataObject == null)
             {
-                _serializedDataObject = new SerializedObject(_editorObject);
+                _serializedDataObject = new SerializedObject(_data);
                 _surfaceColor = _serializedDataObject.FindProperty("surface");
                 _subsurfaceColor = _serializedDataObject.FindProperty("subSurface");
                 _textureSize = _serializedDataObject.FindProperty("size");
-                
             }
             
-            if (_importer && _serializedImporter == null)
+            if (_importer && _serializedImporterObject == null)
             {
-                _serializedImporter = new SerializedObject(_importer);
-                _mip = _serializedImporter.FindProperty("mip");
-                _format = _serializedImporter.FindProperty("format");
-                _filterMode = _serializedImporter.FindProperty("filterMode");
-                _wrapMode = _serializedImporter.FindProperty("wrapMode");
-                _isDataDirty = _serializedImporter.FindProperty("isDataDirty");
+                _serializedImporterObject = new SerializedObject(_importer);
+                _mip = _serializedImporterObject.FindProperty("mip");
+                _format = _serializedImporterObject.FindProperty("format");
+                _filterMode = _serializedImporterObject.FindProperty("filterMode");
+                _wrapMode = _serializedImporterObject.FindProperty("wrapMode");
+                _isDataDirty = _serializedImporterObject.FindProperty("isDataDirty");
             }
             
-            return _editorObject && _serializedDataObject != null && _importer && _serializedImporter != null;
+            return _data && _serializedDataObject != null && _importer && _serializedImporterObject != null;
         }
 
         public override void OnEnable()
         {
             TryInitPropertiesWhenNull();
             base.OnEnable();
+        }
+        
+        public override void OnDisable()
+        {
+            base.OnDisable();
+            _data.Unload();
         }
         
         public override void OnInspectorGUI()
@@ -106,7 +111,7 @@ namespace StylizedSkinRampTexture.Editor
             
             // Texture settings
             {
-                _serializedImporter.Update();
+                _serializedImporterObject.Update();
                 EditorGUI.indentLevel--;
                 GUILayout.Label("Texture Settings",EditorStyles.boldLabel);
                 GUILayout.Space(5);
@@ -115,12 +120,12 @@ namespace StylizedSkinRampTexture.Editor
                 EditorGUILayout.PropertyField(_format, new GUIContent("Texture Format"));
                 EditorGUILayout.PropertyField(_filterMode, new GUIContent("Texture Filter Mode"));
                 EditorGUILayout.PropertyField(_wrapMode, new GUIContent("Texture Wrap Mode"));
-                _serializedImporter.ApplyModifiedProperties();
+                _serializedImporterObject.ApplyModifiedProperties();
             }
             
             GUILayout.Space(10);
             
-            // Apply button
+            // Apply Revert button
             {
                 ApplyRevertGUI();
             }
@@ -133,11 +138,15 @@ namespace StylizedSkinRampTexture.Editor
                     StylizedSkinRampTextureData.ExportImageAsPNG(_importer.assetPath);
             }
         }
-    
-        public override void OnDisable()
+        
+        
+        [OnOpenAsset(0)]
+        public static bool OnOpenAsset(int instanceID, int line)
         {
-            base.OnDisable();
-            DestroyImmediate(_editorObject);
+            var path = AssetDatabase.GetAssetPath(instanceID);
+            if (!(AssetImporter.GetAtPath(path) as StylizedSkinRampTextureImporter)) return false;
+            EditorUtility.OpenPropertyEditor(AssetDatabase.LoadAssetAtPath<Texture2D>(path));
+            return true;
         }
     }
 }

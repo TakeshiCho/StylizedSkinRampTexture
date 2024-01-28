@@ -23,7 +23,7 @@ namespace StylizedSkinRampTexture.Editor
         {
             public override void Action(int instanceId, string pathName, string resourceFile)
             {
-                var json = JsonUtility.ToJson(new StylizedSkinRampTextureData(),true);
+                var json = JsonUtility.ToJson(StylizedSkinRampTextureData.Default(),true);
                 File.WriteAllLines(pathName,new []{json});
                 AssetDatabase.Refresh();
             }
